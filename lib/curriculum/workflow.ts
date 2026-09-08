@@ -12,3 +12,15 @@ export function mergeLessonPlannerContext(base: { gradeLevel: string; subject: s
   if (!curriculum) return base;
   return { ...base, gradeLevel: curriculum.gradeLevel || base.gradeLevel, subject: curriculum.learningArea || base.subject, learningCompetency: curriculum.competency };
 }
+
+export function buildDownstreamWorkflowContext(curriculum: ReturnType<typeof buildVerifiedCurriculumContext>) {
+  return {
+    curriculumId: curriculum.curriculumId,
+    gradeLevel: curriculum.gradeLevel,
+    learningArea: curriculum.learningArea,
+    quarter: curriculum.quarter,
+    competency: curriculum.competency,
+    source: curriculum.source,
+    sourceUrl: curriculum.sourceUrl,
+  };
+}
