@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+const priorities = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
+const statuses = ["TODO", "IN_PROGRESS", "COMPLETED"] as const;
+
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -30,7 +33,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "A task title between 1 and 200 characters is required." }, { status: 400 });
     }
 
-    const priority = ["LOW", "MEDIUM", "HIGH", "URGENT"].includes(String(body.priority)) ? String(body.priority) : "MEDIUM";
+    const priority = priorities.includes(String(body.priority) as typeof priorities[number])
+      ? String(body.priority) as typeof priorities[number]
+      : "MEDIUM";
     const dueAt = body.dueAt ? new Date(String(body.dueAt)) : null;
     if (dueAt && Number.isNaN(dueAt.getTime())) {
       return NextResponse.json({ error: "Invalid due date." }, { status: 400 });
@@ -42,8 +47,10 @@ export async function POST(request: Request) {
         title,
         description: body.description ? String(body.description).slice(0, 2000) : null,
         dueAt,
-        priority: priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT",
+        priority,
         category: body.category ? String(body.category).slice(0, 100) : null,
+        recurring: body.recurring === true || body.recurring === "true",
+        recurrence: body.recurrence ? String(body.recurrence).slice(0, 100) : null,
       },
     });
 
@@ -55,4 +62,56 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Unable to create task." }, { status: 500 });
   }
+}
+
+export async function PATCH(request: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
+  }
+
+  const id = typeof body.id === "string" ? body.id : "";
+  if (!id) return NextResponse.json({ error: "Task id is required." }, { status: 400 });
+
+  const existing = await prisma.task.findFirst({ where: { id, userId: user.id } });
+  if (!existing) return NextResponse.json({ error: "Task not found." }, { status: 404 });
+
+  const status = typeof body.status === "string" && statuses.includes(body.status as typeof statuses[number])
+    ? body.status as typeof statuses[number]
+    : undefined;
+  const dueAt = typeof body.dueAt === "string" ? (body.dueAt ? new Date(body.dueAt) : null) : undefined;
+  if (dueAt && Number.isNaN(dueAt.getTime())) {
+    return NextResponse.json({ error: "Invalid due date." }, { status: 400 });
+  }
+
+  const task = await prisma.task.update({
+    where: { id },
+    data: {
+      ...(typeof body.title === "string" ? { title: body.title.trim().slice(0, 200) } : {}),
+      ...(typeof body.description === "string" ? { description: body.description.trim().slice(0, 2000) || null } : {}),
+      ...(status ? { status, completedAt: status === "COMPLETED" ? new Date() : null } : {}),
+      ...(typeof body.priority === "string" && priorities.includes(body.priority as typeof priorities[number]) ? { priority: body.priority as typeof priorities[number] } : {}),
+      ...(typeof body.category === "string" ? { category: body.category.trim().slice(0, 100) || null } : {}),
+      ...(dueAt !== undefined ? { dueAt } : {}),
+    },
+  });
+
+  return NextResponse.json({ task });
+}
+
+export async function DELETE(request: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Task id is required." }, { status: 400 });
+
+  const result = await prisma.task.deleteMany({ where: { id, userId: user.id } });
+  if (!result.count) return NextResponse.json({ error: "Task not found." }, { status: 404 });
+  return NextResponse.json({ success: true });
 }
