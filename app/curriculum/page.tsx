@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import CurriculumActions from "./CurriculumActions";
 
 type Result = { id: string; gradeLevel: string; learningArea: string; quarter?: string; competency: string; source: string; sourceUrl?: string; verified: boolean };
 
@@ -38,7 +39,7 @@ export default function CurriculumPage() {
         {status && <p className="form-status" role="status">{status}</p>}
       </div></section>
       <section className="card"><div className="card-title"><h2>Verified results</h2><span className="stat-label">Verified sources only</span></div>
-        {results.length ? results.map((item) => <article className="task-card" key={item.id}><div><strong>{item.competency}</strong><p>{item.gradeLevel} · {item.learningArea}{item.quarter ? ` · ${item.quarter}` : ""}</p><small>Source: {item.source}</small></div></article>) : <div className="empty-state"><h3>No curriculum records to display</h3><p>Until verified curriculum documents are ingested and reviewed, CoTeacher will not invent or present competencies as official.</p></div>}
+        {results.length ? results.map((item) => <article className="task-card" key={item.id}><div><strong>{item.competency}</strong><p>{item.gradeLevel} · {item.learningArea}{item.quarter ? ` · ${item.quarter}` : ""}</p><small>Source: {item.source}</small><CurriculumActions curriculumId={item.id} /></div></article>) : <div className="empty-state"><h3>No curriculum records to display</h3><p>Until verified curriculum documents are ingested and reviewed, CoTeacher will not invent or present competencies as official.</p></div>}
       </section>
     </main>
   );
