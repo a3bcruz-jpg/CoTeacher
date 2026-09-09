@@ -51,13 +51,7 @@ function decodeSession(value: string) {
 
 export async function createSession(userId: string) {
   const store = await cookies();
-  store.set(COOKIE_NAME, encodeSession(userId), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_TTL_SECONDS,
-  });
+  store.set(COOKIE_NAME, encodeSession(userId), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: SESSION_TTL_SECONDS });
 }
 
 export async function clearSession() {
@@ -73,7 +67,11 @@ export async function getCurrentUser() {
   if (!userId) return null;
   return prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, teacherProfile: true },
+    select: {
+      id: true,
+      email: true,
+      teacherProfile: { include: { school: true, classes: { include: { subjects: true } } } },
+    },
   });
 }
 
