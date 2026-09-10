@@ -15,15 +15,19 @@ export async function GET() {
     errorCode = typeof code === "string" ? code : null;
   }
 
+  const authSecret = process.env.AUTH_SECRET;
+  const authConfigured = Boolean(authSecret && authSecret.length >= 32);
+
   return NextResponse.json(
     {
-      status: database === "ok" ? "ok" : "degraded",
+      status: database === "ok" && authConfigured ? "ok" : "degraded",
       service: "coteacher",
       database,
       databaseConfigured: Boolean(process.env.DATABASE_URL),
       databaseErrorCode: errorCode,
+      authConfigured,
       timestamp: new Date().toISOString(),
     },
-    { status: database === "ok" ? 200 : 503 },
+    { status: database === "ok" && authConfigured ? 200 : 503 },
   );
 }
