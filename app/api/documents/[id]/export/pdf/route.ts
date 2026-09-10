@@ -3,12 +3,13 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { documentAsPdf, sanitizeFilename } from "@/lib/documents/pdf";
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { id } = await params;
   const document = await prisma.document.findFirst({
-    where: { id: params.id, userId: user.id },
+    where: { id, userId: user.id },
     select: { title: true, content: true },
   });
   if (!document) return NextResponse.json({ error: "Document not found." }, { status: 404 });
