@@ -2,136 +2,39 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
-type Task = {
-  id: string;
-  title: string;
-  description: string | null;
-  dueAt: string | null;
-  priority: string;
-  status: string;
-  category: string | null;
-};
-
+type Task = { id: string; title: string; description: string | null; dueAt: string | null; priority: string; status: string; category: string | null };
 const priorityLabel: Record<string, string> = { LOW: "Low", MEDIUM: "Medium", HIGH: "High", URGENT: "Urgent" };
 const categoryPalette = ["blue", "green", "violet", "orange", "teal", "pink"];
-
-function categoryTone(category: string | null) {
-  const value = (category || "General").trim().toLowerCase();
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) hash = (hash * 31 + value.charCodeAt(index)) | 0;
-  return categoryPalette[Math.abs(hash) % categoryPalette.length];
-}
-
-function priorityTone(priority: string) {
-  return priority.toLowerCase();
-}
+function categoryTone(category: string | null) { const value = (category || "General").trim().toLowerCase(); let hash = 0; for (let index = 0; index < value.length; index += 1) hash = (hash * 31 + value.charCodeAt(index)) | 0; return categoryPalette[Math.abs(hash) % categoryPalette.length]; }
+function priorityTone(priority: string) { return priority.toLowerCase(); }
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [dueAt, setDueAt] = useState("");
-  const [priority, setPriority] = useState("MEDIUM");
-  const [category, setCategory] = useState("");
-
-  async function load() {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await fetch("/api/tasks", { cache: "no-store" });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Unable to load tasks.");
-      setTasks(data.tasks || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load tasks.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
+  const [tasks, setTasks] = useState<Task[]>([]); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false); const [error, setError] = useState("");
+  const [title, setTitle] = useState(""); const [description, setDescription] = useState(""); const [dueAt, setDueAt] = useState(""); const [priority, setPriority] = useState("MEDIUM"); const [category, setCategory] = useState("");
+  async function load() { setLoading(true); setError(""); try { const response = await fetch("/api/tasks", { cache: "no-store" }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || "Unable to load tasks."); setTasks(data.tasks || []); } catch (err) { setError(err instanceof Error ? err.message : "Unable to load tasks."); } finally { setLoading(false); } }
   useEffect(() => { void load(); }, []);
-
-  async function create(event: FormEvent) {
-    event.preventDefault();
-    setSaving(true);
-    setError("");
-    try {
-      const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ title, description, dueAt, priority, category }) });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Unable to create task.");
-      setTasks((current) => [data.task, ...current]);
-      setTitle(""); setDescription(""); setDueAt(""); setPriority("MEDIUM"); setCategory("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to create task.");
-    } finally { setSaving(false); }
-  }
-
-  async function update(id: string, status: string) {
-    setError("");
-    const response = await fetch("/api/tasks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) { setError(data.error || "Unable to update task."); return; }
-    setTasks((current) => current.map((task) => task.id === id ? data.task : task));
-  }
-
-  async function remove(id: string) {
-    if (!window.confirm("Delete this task?")) return;
-    setError("");
-    const response = await fetch(`/api/tasks?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) { setError(data.error || "Unable to delete task."); return; }
-    setTasks((current) => current.filter((task) => task.id !== id));
-  }
-
-  const open = useMemo(() => tasks.filter((task) => task.status !== "COMPLETED"), [tasks]);
-  const completed = tasks.length - open.length;
+  async function create(event: FormEvent) { event.preventDefault(); setSaving(true); setError(""); try { const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ title, description, dueAt, priority, category }) }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || "Unable to create task."); setTasks((current) => [data.task, ...current]); setTitle(""); setDescription(""); setDueAt(""); setPriority("MEDIUM"); setCategory(""); } catch (err) { setError(err instanceof Error ? err.message : "Unable to create task."); } finally { setSaving(false); } }
+  async function update(id: string, status: string) { setError(""); const response = await fetch("/api/tasks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) }); const data = await response.json().catch(() => ({})); if (!response.ok) { setError(data.error || "Unable to update task."); return; } setTasks((current) => current.map((task) => task.id === id ? data.task : task)); }
+  async function remove(id: string) { if (!window.confirm("Delete this task?")) return; setError(""); const response = await fetch(`/api/tasks?id=${encodeURIComponent(id)}`, { method: "DELETE" }); const data = await response.json().catch(() => ({})); if (!response.ok) { setError(data.error || "Unable to delete task."); return; } setTasks((current) => current.filter((task) => task.id !== id)); }
+  const open = useMemo(() => tasks.filter((task) => task.status !== "COMPLETED"), [tasks]); const completed = tasks.length - open.length;
 
   return (
     <main className="page-shell">
       <header className="page-header tasks-hero">
-        <div className="tasks-hero-copy">
-          <div className="hero-icon"><span>✓</span></div>
-          <div><div className="eyebrow">CoTeacher workspace</div><h1>My Tasks</h1><p className="subtitle">Keep reports, activities, lessons, and deadlines in one place.</p></div>
-        </div>
+        <div className="tasks-hero-copy"><div className="hero-icon"><span>✓</span></div><div><div className="eyebrow">CoTeacher workspace</div><h1>My Tasks</h1><p className="subtitle">Keep reports, activities, lessons, and deadlines in one place.</p></div></div>
         <a className="secondary-button hero-back" href="/">←&nbsp; Back to dashboard</a>
       </header>
-
       <section className="task-page-grid">
-        <div className="card task-create-card">
-          <div className="card-title"><div><span className="section-kicker blue-kicker">CREATE</span><h2>Add a task</h2></div><span className="privacy-pill">Private workspace</span></div>
-          <form className="profile-form" onSubmit={create}>
-            <label>Task title<input required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Submit quarterly report" /></label>
-            <label>Description<textarea maxLength={2000} rows={3} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Optional notes" /></label>
-            <div className="form-grid"><label>Due date<input type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} /></label><label>Priority<select value={priority} onChange={(event) => setPriority(event.target.value)}><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option><option value="URGENT">Urgent</option></select></label></div>
-            <label>Category<input maxLength={100} value={category} onChange={(event) => setCategory(event.target.value)} placeholder="Reports, Lesson, Activity..." /></label>
-            <button className="primary-button full-width task-add-button" disabled={saving} type="submit">{saving ? "Adding..." : "Add task  →"}</button>
-          </form>
-        </div>
-
-        <div className="card task-overview-card">
-          <div className="card-title"><div><span className="section-kicker green-kicker">AT A GLANCE</span><h2>Overview</h2></div></div>
-          <div className="overview-metrics"><div className="overview-metric blue-metric"><span>Open</span><strong>{open.length}</strong><small>needs attention</small></div><div className="overview-metric green-metric"><span>Completed</span><strong>{completed}</strong><small>already done</small></div></div>
-          <div className="overview-note"><span>✓</span><div><strong>Stay on top of your work</strong><p>Use categories and priorities to quickly spot what matters most.</p></div></div>
-        </div>
-
-        <div className="card task-card-wide">
-          <div className="card-title"><div><span className="section-kicker violet-kicker">WORKSPACE</span><h2>All tasks</h2></div><button className="small-button" onClick={() => void load()} type="button">↻ Refresh</button></div>
-          {error && <p className="form-error" role="alert">{error}</p>}
-          {loading ? <p className="subtitle">Loading tasks...</p> : tasks.length === 0 ? <div className="empty-state task-empty"><div className="empty-icon">✓</div><h3>Your task list is ready.</h3><p>Add a task above and CoTeacher will keep it organized for you.</p></div> : (
-            <div className="task-list">
-              {tasks.map((task) => (
-                <div className={`task task-row ${task.status === "COMPLETED" ? "task-completed" : ""}`} key={task.id}>
-                  <div className="task-row-main"><div className={`category-mark category-${categoryTone(task.category)}`} aria-hidden="true"></div><div><div className="task-name">{task.title}</div><div className="task-meta"><span className={`category-chip category-chip-${categoryTone(task.category)}`}>{task.category || "General"}</span>{task.dueAt ? <span>{new Date(task.dueAt).toLocaleString()}</span> : <span>No deadline</span>}<span className={`priority-chip priority-chip-${priorityTone(task.priority)}`}>{priorityLabel[task.priority] || task.priority}</span></div></div></div>
-                  <div className="task-actions">{task.status !== "COMPLETED" && <button className="small-button complete-button" onClick={() => void update(task.id, "COMPLETED")} type="button">✓ Complete</button>}<button className="small-button danger-button" onClick={() => void remove(task.id)} type="button">Delete</button></div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <div className="card task-create-card"><div className="card-title"><div><span className="section-kicker blue-kicker">CREATE</span><h2>Add a task</h2></div><span className="privacy-pill">Private workspace</span></div><form className="profile-form" onSubmit={create}><label>Task title<input required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Submit quarterly report" /></label><label>Description<textarea maxLength={2000} rows={3} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Optional notes" /></label><div className="form-grid"><label>Due date<input type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} /></label><label>Priority<select value={priority} onChange={(event) => setPriority(event.target.value)}><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option><option value="URGENT">Urgent</option></select></label></div><label>Category<input maxLength={100} value={category} onChange={(event) => setCategory(event.target.value)} placeholder="Reports, Lesson, Activity..." /></label><button className="primary-button full-width task-add-button" disabled={saving} type="submit">{saving ? "Adding..." : "Add task  →"}</button></form></div>
+        <div className="card task-overview-card"><div className="card-title"><div><span className="section-kicker green-kicker">AT A GLANCE</span><h2>Overview</h2></div></div><div className="overview-metrics"><div className="overview-metric blue-metric"><span>Open</span><strong>{open.length}</strong><small>needs attention</small></div><div className="overview-metric green-metric"><span>Completed</span><strong>{completed}</strong><small>already done</small></div></div><div className="overview-note"><span>✓</span><div><strong>Stay on top of your work</strong><p>Use categories and priorities to quickly spot what matters most.</p></div></div></div>
+        <div className="card task-card-wide"><div className="card-title"><div><span className="section-kicker violet-kicker">WORKSPACE</span><h2>All tasks</h2></div><button className="small-button" onClick={() => void load()} type="button">↻ Refresh</button></div>{error && <p className="form-error" role="alert">{error}</p>}{loading ? <p className="subtitle">Loading tasks...</p> : tasks.length === 0 ? <div className="empty-state task-empty"><div className="empty-icon">✓</div><h3>Your task list is ready.</h3><p>Add a task above and CoTeacher will keep it organized for you.</p></div> : <div className="task-list">{tasks.map((task) => <div className={`task task-row ${task.status === "COMPLETED" ? "task-completed" : ""}`} key={task.id}><div className="task-row-main"><div className={`category-mark category-${categoryTone(task.category)}`} aria-hidden="true"></div><div><div className="task-name">{task.title}</div><div className="task-meta"><span className={`category-chip category-chip-${categoryTone(task.category)}`}>{task.category || "General"}</span>{task.dueAt ? <span>{new Date(task.dueAt).toLocaleString()}</span> : <span>No deadline</span>}<span className={`priority-chip priority-chip-${priorityTone(task.priority)}`}>{priorityLabel[task.priority] || task.priority}</span></div></div></div><div className="task-actions">{task.status !== "COMPLETED" && <button className="small-button complete-button" onClick={() => void update(task.id, "COMPLETED")} type="button">✓ Complete</button>}<button className="small-button danger-button" onClick={() => void remove(task.id)} type="button">Delete</button></div></div>)}</div>}</div>
       </section>
+      <style jsx global>{`
+        .brand-logo{width:48px;height:48px;object-fit:cover;border-radius:14px;flex:0 0 auto;background:#fff;box-shadow:0 8px 20px rgba(39,197,138,.18)}
+        .tasks-hero{position:relative;overflow:hidden;min-height:190px;padding:30px 34px;border:1px solid #dce8f2;border-radius:22px;background:linear-gradient(110deg,#fff 0%,#f5faff 52%,#edf9f5 100%);box-shadow:0 14px 38px rgba(16,36,61,.06);align-items:center}.tasks-hero:after{content:"";position:absolute;width:340px;height:340px;border-radius:50%;right:-110px;top:-160px;background:rgba(23,105,224,.08);pointer-events:none}.tasks-hero-copy{display:flex;align-items:center;gap:20px;position:relative;z-index:1}.hero-icon{width:68px;height:68px;display:grid;place-items:center;border-radius:21px;background:linear-gradient(145deg,#1675ea,#27c58a);color:#fff;font-size:29px;font-weight:900;box-shadow:0 14px 28px rgba(23,105,224,.2)}.hero-icon span{transform:translateY(-1px)}.hero-back{position:relative;z-index:2;background:rgba(255,255,255,.88);font-size:14px;box-shadow:0 8px 22px rgba(16,36,61,.06)}
+        .task-page-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:20px}.task-card-wide{grid-column:1/-1}.section-kicker{display:block;font-size:10px;font-weight:900;letter-spacing:.13em;margin-bottom:5px}.blue-kicker{color:#1769e0}.green-kicker{color:#13a978}.violet-kicker{color:#705bd5}.privacy-pill{padding:6px 10px;border-radius:999px;background:#effaf6;color:#148d67;font-size:10px;font-weight:800}.task-add-button{padding:13px 18px}.overview-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}.overview-metric{padding:17px;border-radius:15px;border:1px solid transparent}.overview-metric span,.overview-metric small{display:block;font-size:11px;color:var(--muted)}.overview-metric strong{display:block;font-size:32px;line-height:1;margin:8px 0}.blue-metric{background:#eff6ff;border-color:#dbeafe}.blue-metric strong{color:#1769e0}.green-metric{background:#effbf6;border-color:#d6f5e7}.green-metric strong{color:#13a978}.overview-note{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:13px;border-radius:13px;background:#f8fafc}.overview-note>span{display:grid;place-items:center;width:27px;height:27px;border-radius:9px;background:#dff7ed;color:#149b70;font-weight:900}.overview-note strong{font-size:12px}.overview-note p{margin:3px 0 0;color:var(--muted);font-size:11px;line-height:1.45}.task-row{padding:15px 14px}.task-row-main{display:flex;align-items:center;gap:12px;min-width:0}.category-mark{width:5px;min-height:43px;border-radius:99px;flex:0 0 auto}.category-blue{background:#1769e0}.category-green{background:#18b981}.category-violet{background:#765bd9}.category-orange{background:#f59e0b}.category-teal{background:#0ea5a4}.category-pink{background:#e55c9e}.task-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.category-chip,.priority-chip{display:inline-flex;align-items:center;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:800}.category-chip-blue{background:#eaf2ff;color:#1769e0}.category-chip-green{background:#e8f8f1;color:#14966e}.category-chip-violet{background:#f0edff;color:#6d56ce}.category-chip-orange{background:#fff6df;color:#b26b00}.category-chip-teal{background:#e5f8f8;color:#087f7d}.category-chip-pink{background:#fcebf4;color:#b73f78}.priority-chip-urgent{background:#fee8e7;color:#c4372f}.priority-chip-high{background:#fff4db;color:#a76600}.priority-chip-medium{background:#eaf2ff;color:#1769e0}.priority-chip-low{background:#f1f5f9;color:#64748b}.task-actions{display:flex;gap:7px;align-items:center;flex:0 0 auto}.small-button{border:1px solid #dfe6ee;background:#fff;color:#23324a;border-radius:9px;padding:8px 10px;font-size:11px;font-weight:800}.small-button:hover{border-color:#b9d1ed;background:#f8fbff}.complete-button{color:#11845f;border-color:#cdeee1;background:#f4fcf8}.danger-button{color:#b42318}.task-completed{opacity:.65}.task-completed .task-name{text-decoration:line-through}.task-empty{padding:42px 16px}.empty-icon{display:grid;place-items:center;width:52px;height:52px;margin:0 auto 12px;border-radius:16px;background:linear-gradient(145deg,#eaf3ff,#e9faf4);color:#1769e0;font-size:22px;font-weight:900}
+        @media(max-width:800px){.task-page-grid{grid-template-columns:1fr}.task-card-wide{grid-column:auto}.tasks-hero{padding:24px;align-items:flex-start}.tasks-hero-copy{align-items:flex-start}.hero-back{align-self:flex-start}.task-actions{width:100%;justify-content:flex-end}.task-row{align-items:flex-start;flex-direction:column}.task-row-main{width:100%}}@media(max-width:560px){.tasks-hero{padding:20px;flex-direction:column}.tasks-hero-copy{gap:13px}.hero-icon{width:52px;height:52px;border-radius:16px;font-size:23px}.tasks-hero h1{font-size:30px}.overview-metrics{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}.task-meta{gap:5px}}
+      `}</style>
     </main>
   );
 }
