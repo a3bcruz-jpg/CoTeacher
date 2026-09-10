@@ -12,12 +12,19 @@ type Task = {
   category: string | null;
 };
 
-const priorityLabel: Record<string, string> = {
-  LOW: "Low",
-  MEDIUM: "Medium",
-  HIGH: "High",
-  URGENT: "Urgent",
-};
+const priorityLabel: Record<string, string> = { LOW: "Low", MEDIUM: "Medium", HIGH: "High", URGENT: "Urgent" };
+const categoryPalette = ["blue", "green", "violet", "orange", "teal", "pink"];
+
+function categoryTone(category: string | null) {
+  const value = (category || "General").trim().toLowerCase();
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) hash = (hash * 31 + value.charCodeAt(index)) | 0;
+  return categoryPalette[Math.abs(hash) % categoryPalette.length];
+}
+
+function priorityTone(priority: string) {
+  return priority.toLowerCase();
+}
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -45,47 +52,28 @@ export default function TasksPage() {
     }
   }
 
-  useEffect(() => {
-    void load();
-  }, []);
+  useEffect(() => { void load(); }, []);
 
   async function create(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
     setError("");
     try {
-      const response = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ title, description, dueAt, priority, category }),
-      });
+      const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ title, description, dueAt, priority, category }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Unable to create task.");
       setTasks((current) => [data.task, ...current]);
-      setTitle("");
-      setDescription("");
-      setDueAt("");
-      setPriority("MEDIUM");
-      setCategory("");
+      setTitle(""); setDescription(""); setDueAt(""); setPriority("MEDIUM"); setCategory("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to create task.");
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   }
 
   async function update(id: string, status: string) {
     setError("");
-    const response = await fetch("/api/tasks", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status }),
-    });
+    const response = await fetch("/api/tasks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setError(data.error || "Unable to update task.");
-      return;
-    }
+    if (!response.ok) { setError(data.error || "Unable to update task."); return; }
     setTasks((current) => current.map((task) => task.id === id ? data.task : task));
   }
 
@@ -94,10 +82,7 @@ export default function TasksPage() {
     setError("");
     const response = await fetch(`/api/tasks?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setError(data.error || "Unable to delete task.");
-      return;
-    }
+    if (!response.ok) { setError(data.error || "Unable to delete task."); return; }
     setTasks((current) => current.filter((task) => task.id !== id));
   }
 
@@ -106,53 +91,41 @@ export default function TasksPage() {
 
   return (
     <main className="page-shell">
-      <header className="page-header">
-        <div>
-          <div className="eyebrow">CoTeacher workspace</div>
-          <h1>My Tasks</h1>
-          <p className="subtitle">Keep reports, activities, lessons, and deadlines in one place.</p>
+      <header className="page-header tasks-hero">
+        <div className="tasks-hero-copy">
+          <div className="hero-icon"><span>✓</span></div>
+          <div><div className="eyebrow">CoTeacher workspace</div><h1>My Tasks</h1><p className="subtitle">Keep reports, activities, lessons, and deadlines in one place.</p></div>
         </div>
-        <a className="secondary-button" href="/">Back to dashboard</a>
+        <a className="secondary-button hero-back" href="/">←&nbsp; Back to dashboard</a>
       </header>
 
       <section className="task-page-grid">
-        <div className="card">
-          <div className="card-title"><h2>Add a task</h2><span className="stat-label">Private workspace</span></div>
+        <div className="card task-create-card">
+          <div className="card-title"><div><span className="section-kicker blue-kicker">CREATE</span><h2>Add a task</h2></div><span className="privacy-pill">Private workspace</span></div>
           <form className="profile-form" onSubmit={create}>
             <label>Task title<input required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Submit quarterly report" /></label>
             <label>Description<textarea maxLength={2000} rows={3} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Optional notes" /></label>
-            <div className="form-grid">
-              <label>Due date<input type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} /></label>
-              <label>Priority<select value={priority} onChange={(event) => setPriority(event.target.value)}><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option><option value="URGENT">Urgent</option></select></label>
-            </div>
-            <label>Category<input maxLength={100} value={category} onChange={(event) => setCategory(event.target.value)} placeholder="Reports" /></label>
-            <button className="primary-button full-width" disabled={saving} type="submit">{saving ? "Adding..." : "Add task"}</button>
+            <div className="form-grid"><label>Due date<input type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} /></label><label>Priority<select value={priority} onChange={(event) => setPriority(event.target.value)}><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option><option value="URGENT">Urgent</option></select></label></div>
+            <label>Category<input maxLength={100} value={category} onChange={(event) => setCategory(event.target.value)} placeholder="Reports, Lesson, Activity..." /></label>
+            <button className="primary-button full-width task-add-button" disabled={saving} type="submit">{saving ? "Adding..." : "Add task  →"}</button>
           </form>
         </div>
 
-        <div className="card">
-          <div className="card-title"><h2>Overview</h2></div>
-          <div className="stats compact-stats">
-            <div><span className="stat-label">Open</span><div className="stat-value">{open.length}</div></div>
-            <div><span className="stat-label">Completed</span><div className="stat-value">{completed}</div></div>
-          </div>
+        <div className="card task-overview-card">
+          <div className="card-title"><div><span className="section-kicker green-kicker">AT A GLANCE</span><h2>Overview</h2></div></div>
+          <div className="overview-metrics"><div className="overview-metric blue-metric"><span>Open</span><strong>{open.length}</strong><small>needs attention</small></div><div className="overview-metric green-metric"><span>Completed</span><strong>{completed}</strong><small>already done</small></div></div>
+          <div className="overview-note"><span>✓</span><div><strong>Stay on top of your work</strong><p>Use categories and priorities to quickly spot what matters most.</p></div></div>
         </div>
 
         <div className="card task-card-wide">
-          <div className="card-title"><h2>All tasks</h2><button className="small-button" onClick={() => void load()} type="button">Refresh</button></div>
+          <div className="card-title"><div><span className="section-kicker violet-kicker">WORKSPACE</span><h2>All tasks</h2></div><button className="small-button" onClick={() => void load()} type="button">↻ Refresh</button></div>
           {error && <p className="form-error" role="alert">{error}</p>}
-          {loading ? <p className="subtitle">Loading tasks...</p> : tasks.length === 0 ? <p className="empty-state">No tasks yet. Add your first task above.</p> : (
+          {loading ? <p className="subtitle">Loading tasks...</p> : tasks.length === 0 ? <div className="empty-state task-empty"><div className="empty-icon">✓</div><h3>Your task list is ready.</h3><p>Add a task above and CoTeacher will keep it organized for you.</p></div> : (
             <div className="task-list">
               {tasks.map((task) => (
-                <div className={`task ${task.status === "COMPLETED" ? "task-completed" : ""}`} key={task.id}>
-                  <div>
-                    <div className="task-name">{task.title}</div>
-                    <div className="task-meta">{task.category || "General"} · {task.dueAt ? new Date(task.dueAt).toLocaleString() : "No deadline"} · {priorityLabel[task.priority] || task.priority}</div>
-                  </div>
-                  <div className="task-actions">
-                    {task.status !== "COMPLETED" && <button className="small-button" onClick={() => void update(task.id, "COMPLETED")} type="button">Complete</button>}
-                    <button className="small-button danger-button" onClick={() => void remove(task.id)} type="button">Delete</button>
-                  </div>
+                <div className={`task task-row ${task.status === "COMPLETED" ? "task-completed" : ""}`} key={task.id}>
+                  <div className="task-row-main"><div className={`category-mark category-${categoryTone(task.category)}`} aria-hidden="true"></div><div><div className="task-name">{task.title}</div><div className="task-meta"><span className={`category-chip category-chip-${categoryTone(task.category)}`}>{task.category || "General"}</span>{task.dueAt ? <span>{new Date(task.dueAt).toLocaleString()}</span> : <span>No deadline</span>}<span className={`priority-chip priority-chip-${priorityTone(task.priority)}`}>{priorityLabel[task.priority] || task.priority}</span></div></div></div>
+                  <div className="task-actions">{task.status !== "COMPLETED" && <button className="small-button complete-button" onClick={() => void update(task.id, "COMPLETED")} type="button">✓ Complete</button>}<button className="small-button danger-button" onClick={() => void remove(task.id)} type="button">Delete</button></div>
                 </div>
               ))}
             </div>
