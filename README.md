@@ -28,6 +28,7 @@ CoTeacher is being designed to reduce repetitive administrative work, documentat
 - Health endpoint at `/api/health`
 - Database migration scripts documented
 - Product and architecture specifications in `docs/`
+- Next.js 16 dynamic route compatibility fixes
 
 ## Development status
 
