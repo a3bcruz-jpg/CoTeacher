@@ -13,6 +13,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
 
+  const title = body.title === "SIR" || body.title === "MAAM" ? body.title : null;
   const fullName = typeof body.fullName === "string" ? body.fullName.trim() : "";
   const school = typeof body.school === "string" ? body.school.trim() : "";
   const gradeLevel = typeof body.gradeLevel === "string" ? body.gradeLevel.trim() : "";
@@ -21,7 +22,7 @@ export async function PUT(request: Request) {
   const department = typeof body.department === "string" ? body.department.trim() : null;
   const schoolYear = typeof body.schoolYear === "string" ? body.schoolYear.trim() : "";
 
-  if (!fullName || !school || !gradeLevel || !subject || !schoolYear) {
+  if (!title || !fullName || !school || !gradeLevel || !subject || !schoolYear) {
     return NextResponse.json({ error: "Please complete all required fields." }, { status: 400 });
   }
 
@@ -31,8 +32,8 @@ export async function PUT(request: Request) {
 
     const profile = await tx.teacherProfile.upsert({
       where: { userId: user.id },
-      create: { userId: user.id, schoolId: schoolRecord.id, fullName, position: position || null, gradeLevel, department: department || null, schoolYear },
-      update: { schoolId: schoolRecord.id, fullName, position: position || null, gradeLevel, department: department || null, schoolYear },
+      create: { userId: user.id, schoolId: schoolRecord.id, title, fullName, position: position || null, gradeLevel, department: department || null, schoolYear },
+      update: { schoolId: schoolRecord.id, title, fullName, position: position || null, gradeLevel, department: department || null, schoolYear },
     });
 
     const className = `${gradeLevel} · ${subject}`;
