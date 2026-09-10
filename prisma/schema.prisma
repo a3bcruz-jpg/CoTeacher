@@ -8,6 +8,11 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum TeacherTitle {
+  SIR
+  MAAM
+}
+
 enum TaskStatus {
   TODO
   IN_PROGRESS
@@ -78,6 +83,7 @@ model TeacherProfile {
   id             String   @id @default(cuid())
   userId         String   @unique
   schoolId       String?
+  title          TeacherTitle?
   fullName       String
   position       String?
   gradeLevel     String?
