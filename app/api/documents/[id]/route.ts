@@ -5,8 +5,8 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-export async function PATCH(request: Request, {
-  if (!isSameOrigin(request)) return originError(); params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!isSameOrigin(request)) return originError();
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
