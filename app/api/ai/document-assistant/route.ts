@@ -12,6 +12,15 @@ export async function POST(request: Request) {
   let body: DocumentAssistantInput;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON." }, { status: 400 }); }
 
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "A valid request body is required." }, { status: 400 });
+  }
+
+  const serialized = JSON.stringify(body);
+  if (serialized.length > 30000) {
+    return NextResponse.json({ error: "Request is too large. Please shorten the document inputs." }, { status: 400 });
+  }
+
   try {
     const profile = await prisma.teacherProfile.findUnique({ where: { userId: user.id }, include: { school: true } });
     const input = { ...body, teacherName: profile?.fullName ?? undefined, schoolName: profile?.school?.name ?? undefined };
