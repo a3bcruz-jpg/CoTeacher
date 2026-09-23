@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import CurriculumActions from "./CurriculumActions";
+import CurriculumActions from "./CurriculumActions";\nimport { AppShell } from "@/app/components/AppShell";
 
 type Result = { id: string; gradeLevel: string; learningArea: string; quarter?: string; competency: string; source: string; sourceUrl?: string; verified: boolean };
 
