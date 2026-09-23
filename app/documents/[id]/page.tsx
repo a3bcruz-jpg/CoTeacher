@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DocumentEditor from "./DocumentEditor";
 import ExportButton from "./ExportButton";
+import { AppShell } from "@/app/components/AppShell";
 
 export default async function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
