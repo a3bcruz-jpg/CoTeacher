@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const password = String(body.password ?? "");
     const fullName = String(body.fullName ?? "").trim();
 
-    if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 8 || fullName.length < 2) {
+    if (email.length > 254 || fullName.length > 150 || password.length > 128 || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8 || fullName.length < 2) {
       return NextResponse.json({ error: "Enter a valid name, email, and password of at least 8 characters." }, { status: 400 });
     }
 
