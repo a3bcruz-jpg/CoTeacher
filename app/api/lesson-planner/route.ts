@@ -1,3 +1,4 @@
+import { isSameOrigin, originError } from "@/lib/security";
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
@@ -16,6 +17,7 @@ const LIMITS = {
 };
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) return originError();
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
