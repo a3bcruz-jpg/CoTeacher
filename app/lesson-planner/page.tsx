@@ -7,6 +7,7 @@ export default function LessonPlannerPage() {
   const router = useRouter();
   const [form, setForm] = useState({ gradeLevel:"", subject:"", topic:"", learningCompetency:"", durationMinutes:60, learnerContext:"" });
   const [draft, setDraft] = useState("");
+  const [generationId, setGenerationId] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -34,7 +35,9 @@ export default function LessonPlannerPage() {
       const response = await fetch("/api/lesson-planner", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ ...form, curriculumId: curriculumId || undefined }) });
       const data = await response.json().catch(()=>({}));
       if (!response.ok) { setStatus(data.error || "Unable to generate lesson plan."); return; }
-      setDraft(data.draft || ""); setStatus("Draft ready. Review all content before classroom use.");
+      setDraft(data.draft || "");
+      setGenerationId(data.generationId || "");
+      setStatus("Draft ready. Review all content before classroom use.");
     } catch { setStatus("Unable to reach the lesson-planning service."); }
     finally { setLoading(false); }
   }
@@ -44,7 +47,7 @@ export default function LessonPlannerPage() {
     setSaving(true); setStatus("Saving lesson plan to Documents...");
     try {
       const title = form.topic.trim() ? `Lesson Plan: ${form.topic.trim()}` : "Lesson Plan Draft";
-      const response = await fetch("/api/documents", { method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"}, body:JSON.stringify({ title, content:draft }) });
+      const response = await fetch("/api/documents", { method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"}, body:JSON.stringify({ title, content:draft, generationId: generationId || undefined }) });
       const data = await response.json().catch(()=>({}));
       if (!response.ok) { setStatus(data.error || "Unable to save lesson plan."); return; }
       setStatus("Lesson plan saved. Opening your document...");
