@@ -1,5 +1,7 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { getAIProvider } from "@/lib/ai/provider";
 import { buildLessonPlanPrompt, validateLessonPlanInput, type LessonPlanInput } from "@/lib/lesson-planner";
 
@@ -18,11 +20,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let body: LessonPlanInput;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
-  }
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON." }, { status: 400 }); }
 
   const input: LessonPlanInput = {
     gradeLevel: typeof body.gradeLevel === "string" ? body.gradeLevel.trim() : "",
@@ -54,11 +52,30 @@ export async function POST(request: Request) {
   if (!provider) return NextResponse.json({ error: "AI generation is not configured." }, { status: 503 });
 
   try {
+    const prompt = buildLessonPlanPrompt(input);
     const draft = await provider.generateText({
       system: "You are CoTeacher. Produce careful, practical lesson-plan drafts for Philippine teachers. Never fabricate official curriculum requirements or learner facts. Clearly mark missing information.",
-      user: buildLessonPlanPrompt(input),
+      user: prompt,
     });
-    return NextResponse.json({ draft });
+
+    const generation = await prisma.aIGeneration.create({
+      data: {
+        userId: user.id,
+        feature: "lesson-planner",
+        model: process.env.AI_MODEL || "gpt-5.6-mini",
+        inputHash: createHash("sha256").update(prompt).digest("hex"),
+        promptMeta: {
+          gradeLevel: input.gradeLevel,
+          subject: input.subject,
+          topic: input.topic,
+          durationMinutes: input.durationMinutes,
+        },
+        outputText: draft,
+      },
+      select: { id: true },
+    });
+
+    return NextResponse.json({ draft, generationId: generation.id });
   } catch {
     return NextResponse.json({ error: "The AI provider could not generate the lesson plan." }, { status: 502 });
   }
