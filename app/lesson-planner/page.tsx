@@ -29,10 +29,25 @@ export default function LessonPlannerPage() {
       .catch(() => setStatus("Unable to load verified curriculum context."));
   }, []);
 
+  const canGenerate =
+    !loading &&
+    form.gradeLevel.trim() &&
+    form.subject.trim() &&
+    form.topic.trim() &&
+    form.learningCompetency.trim() &&
+    Number.isFinite(form.durationMinutes) &&
+    form.durationMinutes >= 15 &&
+    form.durationMinutes <= 480;
+
   async function generate() {
-    setLoading(true); setStatus("Generating lesson-plan draft...");
+    if (!canGenerate) {
+      setStatus("Complete the required lesson context and use a duration from 15 to 480 minutes.");
+      return;
+    }
+    setLoading(true);
+    setStatus("Generating lesson-plan draft...");
     try {
-      const response = await fetch("/api/lesson-planner", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ ...form, curriculumId: curriculumId || undefined }) });
+      const response = await fetch("/api/lesson-planner", { method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"}, body:JSON.stringify({ ...form, curriculumId: curriculumId || undefined }) });
       const data = await response.json().catch(()=>({}));
       if (!response.ok) { setStatus(data.error || "Unable to generate lesson plan."); return; }
       setDraft(data.draft || "");
@@ -43,8 +58,9 @@ export default function LessonPlannerPage() {
   }
 
   async function saveDraft() {
-    if (!draft.trim()) return;
-    setSaving(true); setStatus("Saving lesson plan to Documents...");
+    if (!draft.trim() || saving) return;
+    setSaving(true);
+    setStatus("Saving lesson plan to Documents...");
     try {
       const title = form.topic.trim() ? `Lesson Plan: ${form.topic.trim()}` : "Lesson Plan Draft";
       const response = await fetch("/api/documents", { method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"}, body:JSON.stringify({ title, content:draft, generationId: generationId || undefined }) });
@@ -56,5 +72,5 @@ export default function LessonPlannerPage() {
     finally { setSaving(false); }
   }
 
-  return <main className="main"><div className="header"><div><div className="eyebrow">Lesson Planning Assistant</div><h1>Plan a lesson with less paperwork.</h1><p className="subtitle">Give CoTeacher the teaching context, then review the generated lesson-plan draft.</p></div></div><section className="ai-workspace"><div className="card"><div className="card-title"><h2>Lesson context</h2>{curriculumId&&<span className="stat-label">Verified curriculum linked</span>}</div><div className="profile-form compact-form"><label>Grade level *<input value={form.gradeLevel} onChange={e=>setForm({...form,gradeLevel:e.target.value})} placeholder="e.g. Grade 7"/></label><label>Subject *<input value={form.subject} onChange={e=>setForm({...form,subject:e.target.value})} placeholder="e.g. Mathematics"/></label><label>Topic *<input value={form.topic} onChange={e=>setForm({...form,topic:e.target.value})} placeholder="Lesson topic"/></label><label>Learning competency / objective *<textarea rows={3} value={form.learningCompetency} onChange={e=>setForm({...form,learningCompetency:e.target.value})} placeholder="Enter the competency or objective provided by your school/curriculum source"/></label><label>Duration (minutes) *<input type="number" min={15} max={480} value={form.durationMinutes} onChange={e=>setForm({...form,durationMinutes:Number(e.target.value)})}/></label><label>Learner context<textarea rows={3} value={form.learnerContext} onChange={e=>setForm({...form,learnerContext:e.target.value})} placeholder="Optional: class needs, prior knowledge, available resources"/></label><button className="primary-button" onClick={generate} disabled={loading}>{loading?"Generating...":"Generate lesson plan"}</button>{status&&<p className="form-status" role="status">{status}</p>}</div></div><div className="card"><div className="card-title"><h2>Review draft</h2>{draft&&<button className="secondary-button" onClick={saveDraft} disabled={saving}>{saving?"Saving...":"Save to Documents"}</button>}</div>{draft?<><textarea className="draft-editor" rows={28} value={draft} onChange={e=>setDraft(e.target.value)}/><p className="disclaimer">AI-generated instructional content is a draft. Verify competencies, curriculum alignment, timing, learner needs, and applicable school or DepEd requirements before use.</p></>:<div className="empty-state"><h3>Your lesson plan will appear here</h3><p>Complete the lesson context and generate a draft.</p></div>}</div></section></main>;
+  return <main className="main"><div className="header"><div><div className="eyebrow">Lesson Planning Assistant</div><h1>Plan a lesson with less paperwork.</h1><p className="subtitle">Give CoTeacher the teaching context, then review the generated lesson-plan draft.</p></div></div><section className="ai-workspace"><div className="card"><div className="card-title"><h2>Lesson context</h2>{curriculumId&&<span className="stat-label">Verified curriculum linked</span>}</div><div className="profile-form compact-form"><label>Grade level *<input value={form.gradeLevel} onChange={e=>setForm({...form,gradeLevel:e.target.value})} placeholder="e.g. Grade 7" maxLength={100}/></label><label>Subject *<input value={form.subject} onChange={e=>setForm({...form,subject:e.target.value})} placeholder="e.g. Mathematics" maxLength={120}/></label><label>Topic *<input value={form.topic} onChange={e=>setForm({...form,topic:e.target.value})} placeholder="Lesson topic" maxLength={240}/></label><label>Learning competency / objective *<textarea rows={3} value={form.learningCompetency} onChange={e=>setForm({...form,learningCompetency:e.target.value})} placeholder="Enter the competency or objective provided by your school/curriculum source" maxLength={3000}/></label><label>Duration (minutes) *<input type="number" min={15} max={480} value={form.durationMinutes} onChange={e=>setForm({...form,durationMinutes:Number(e.target.value)})}/></label><label>Learner context<textarea rows={3} value={form.learnerContext} onChange={e=>setForm({...form,learnerContext:e.target.value})} placeholder="Optional: class needs, prior knowledge, available resources" maxLength={3000}/></label><button className="primary-button" onClick={generate} disabled={!canGenerate}>{loading?"Generating...":"Generate lesson plan"}</button>{status&&<p className="form-status" role="status" aria-live="polite">{status}</p>}</div></div><div className="card"><div className="card-title"><h2>Review draft</h2>{draft&&<button className="secondary-button" onClick={saveDraft} disabled={saving}>{saving?"Saving...":"Save to Documents"}</button>}</div>{draft?<><textarea className="draft-editor" rows={28} value={draft} onChange={e=>setDraft(e.target.value)} aria-label="Lesson plan draft"/><p className="disclaimer">AI-generated instructional content is a draft. Verify competencies, curriculum alignment, timing, learner needs, and applicable school or DepEd requirements before use.</p></>:<div className="empty-state"><h3>Your lesson plan will appear here</h3><p>Complete the lesson context and generate a draft.</p></div>}</div></section></main>;
 }
