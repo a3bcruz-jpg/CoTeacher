@@ -11,7 +11,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const document = await prisma.document.findFirst({
     where: { id, userId: user.id },
-    select: { id: true, title: true, content: true, updatedAt: true },
+    select: { id: true, title: true, content: true, status: true, updatedAt: true },
   });
   if (!document) notFound();
 
@@ -20,7 +20,10 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
       <div className="header">
         <div>
           <div className="eyebrow">Document editor</div>
-          <h1>{document.title}</h1>
+          <div className="document-title-row">
+            <h1>{document.title}</h1>
+            <span className={`status-chip status-${document.status.toLowerCase()}`}>{document.status}</span>
+          </div>
           <p className="subtitle">Last updated {document.updatedAt.toLocaleString()}</p>
         </div>
         <div className="header-actions">
