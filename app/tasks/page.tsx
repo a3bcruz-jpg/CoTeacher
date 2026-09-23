@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { AppShell } from "@/app/components/AppShell";
 
 type Task = { id: string; title: string; description: string | null; dueAt: string | null; priority: string; status: string; category: string | null };
 const priorityLabel: Record<string, string> = { LOW: "Low", MEDIUM: "Medium", HIGH: "High", URGENT: "Urgent" };
