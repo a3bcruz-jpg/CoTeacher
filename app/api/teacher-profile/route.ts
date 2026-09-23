@@ -26,6 +26,20 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Please complete all required fields." }, { status: 400 });
   }
 
+  const limits: Array<[string, string, number]> = [
+    ["Full name", fullName, 150],
+    ["School", school, 200],
+    ["Grade level", gradeLevel, 100],
+    ["Subject", subject, 150],
+    ["Position", position ?? "", 150],
+    ["Department", department ?? "", 150],
+    ["School year", schoolYear, 50],
+  ];
+  const oversized = limits.find(([, value, limit]) => value.length > limit);
+  if (oversized) {
+    return NextResponse.json({ error: `${oversized[0]} is too long. Please keep it within ${oversized[2]} characters.` }, { status: 400 });
+  }
+
   const result = await prisma.$transaction(async (tx) => {
     const existingSchool = await tx.school.findFirst({ where: { name: school } });
     const schoolRecord = existingSchool ?? await tx.school.create({ data: { name: school } });
