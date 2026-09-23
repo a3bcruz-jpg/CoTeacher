@@ -10,6 +10,7 @@ export default function DocumentAssistantPage() {
   const [generationId, setGenerationId] = useState("");
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const template = DOCUMENT_TEMPLATES.find((item) => item.slug === templateSlug) ?? DOCUMENT_TEMPLATES[0];
 
   function selectTemplate(slug: string) {
@@ -21,33 +22,46 @@ export default function DocumentAssistantPage() {
   }
 
   async function generate() {
+    if (generating || saving) return;
+    setGenerating(true);
     setStatus("Preparing draft...");
-    const response = await fetch("/api/ai/document-assistant", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ templateSlug, fields }),
-    });
-    const data = await response.json().catch(()=>({}));
-    if (!response.ok) { setStatus(data.error || "Unable to prepare draft."); return; }
-    setDraft(data.draft || "");
-    setGenerationId(data.generationId || "");
-    setStatus("Draft ready. Review before using or submitting.");
+    try {
+      const response = await fetch("/api/ai/document-assistant", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ templateSlug, fields }),
+      });
+      const data = await response.json().catch(()=>({}));
+      if (!response.ok) { setStatus(data.error || "Unable to prepare draft."); return; }
+      setDraft(data.draft || "");
+      setGenerationId(data.generationId || "");
+      setStatus("Draft ready. Review before using or submitting.");
+    } catch {
+      setStatus("Unable to reach the document assistant. Please try again.");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   async function saveDraft() {
-    if (!draft.trim()) return;
+    if (!draft.trim() || generating || saving) return;
     setSaving(true);
     setStatus("Saving document...");
-    const response = await fetch("/api/ai/document-assistant/save", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ title:template.name, content:draft, generationId: generationId || undefined }),
-    });
-    const data = await response.json().catch(()=>({}));
-    setSaving(false);
-    if (!response.ok) { setStatus(data.error || "Unable to save document."); return; }
-    window.location.href = `/documents/${data.document.id}`;
+    try {
+      const response = await fetch("/api/ai/document-assistant/save", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ title:template.name, content:draft, generationId: generationId || undefined }),
+      });
+      const data = await response.json().catch(()=>({}));
+      if (!response.ok) { setStatus(data.error || "Unable to save document."); return; }
+      window.location.href = `/documents/${data.document.id}`;
+    } catch {
+      setStatus("Unable to save the document. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  return <main className="main"><div className="header"><div><div className="eyebrow">AI Document Assistant</div><h1>Turn notes into a structured draft.</h1><p className="subtitle">CoTeacher helps organize teacher-provided information. It does not replace review of official requirements.</p></div></div><section className="ai-workspace"><div className="card"><div className="card-title"><h2>1. Choose a template</h2></div><div className="template-picker">{DOCUMENT_TEMPLATES.map(item=><button type="button" key={item.slug} className={item.slug===templateSlug?"template-option selected":"template-option"} onClick={()=>selectTemplate(item.slug)}><strong>{item.name}</strong><span>{item.category}</span></button>)}</div></div><div className="card"><div className="card-title"><h2>2. Provide information</h2><span className="stat-label">{template.name}</span></div><div className="profile-form compact-form">{template.fields.map(field=><label key={field.key}>{field.label}{field.required&&" *"}<textarea rows={3} required={field.required} value={fields[field.key]||""} onChange={e=>setFields(v=>({...v,[field.key]:e.target.value}))} placeholder={field.placeholder}/></label>)}<button className="primary-button" onClick={generate}>Generate draft</button>{status&&<p className="form-status" role="status">{status}</p>}</div></div><div className="card"><div className="card-title"><h2>3. Review & save</h2></div>{draft?<><textarea className="draft-editor" value={draft} onChange={e=>setDraft(e.target.value)} rows={20}/><div className="editor-actions"><button className="primary-button" onClick={saveDraft} disabled={saving}>{saving?"Saving...":"Save as document"}</button></div><p className="disclaimer">Review every generated section for accuracy. Verify current DepEd or school requirements before official use or submission.</p></>:<div className="empty-state"><h3>Your draft will appear here</h3><p>Complete the required information, then generate the draft.</p></div>}</div></section></main>;
+  return <main className="main"><div className="header"><div><div className="eyebrow">AI Document Assistant</div><h1>Turn notes into a structured draft.</h1><p className="subtitle">CoTeacher helps organize teacher-provided information. It does not replace review of official requirements.</p></div></div><section className="ai-workspace"><div className="card"><div className="card-title"><h2>1. Choose a template</h2></div><div className="template-picker">{DOCUMENT_TEMPLATES.map(item=><button type="button" key={item.slug} className={item.slug===templateSlug?"template-option selected":"template-option"} onClick={()=>selectTemplate(item.slug)}><strong>{item.name}</strong><span>{item.category}</span></button>)}</div></div><div className="card"><div className="card-title"><h2>2. Provide information</h2><span className="stat-label">{template.name}</span></div><div className="profile-form compact-form">{template.fields.map(field=><label key={field.key}>{field.label}{field.required&&" *"}<textarea rows={3} required={field.required} value={fields[field.key]||""} onChange={e=>setFields(v=>({...v,[field.key]:e.target.value}))} placeholder={field.placeholder}/></label>)}<button className="primary-button" onClick={generate} disabled={generating || saving}>{generating ? "Generating..." : "Generate draft"}</button>{status&&<p className="form-status" role="status">{status}</p>}</div></div><div className="card"><div className="card-title"><h2>3. Review & save</h2></div>{draft?<><textarea className="draft-editor" value={draft} onChange={e=>setDraft(e.target.value)} rows={20}/><div className="editor-actions"><button className="primary-button" onClick={saveDraft} disabled={saving}>{saving?"Saving...":"Save as document"}</button></div><p className="disclaimer">Review every generated section for accuracy. Verify current DepEd or school requirements before official use or submission.</p></>:<div className="empty-state"><h3>Your draft will appear here</h3><p>Complete the required information, then generate the draft.</p></div>}</div></section></main>;
 }
