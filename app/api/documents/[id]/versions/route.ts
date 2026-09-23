@@ -13,8 +13,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   return NextResponse.json({ versions });
 }
 
-export async function POST(request: Request, {
-  if (!isSameOrigin(request)) return originError(); params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!isSameOrigin(request)) return originError();
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
