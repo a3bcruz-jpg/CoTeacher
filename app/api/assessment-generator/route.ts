@@ -1,9 +1,11 @@
+import { isSameOrigin, originError } from "@/lib/security";
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getAIProvider } from "@/lib/ai/provider";
 import { buildAssessmentPrompt, validateAssessmentInput, type AssessmentInput } from "@/lib/assessment-generator";
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) return originError();
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
