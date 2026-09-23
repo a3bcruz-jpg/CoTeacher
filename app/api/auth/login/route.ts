@@ -1,3 +1,4 @@
+import { isSameOrigin, originError } from "@/lib/security";
 import { NextResponse } from "next/server";
 import { createSession, verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -5,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) return originError();
   try {
     const contentLength = Number(request.headers.get("content-length") || 0);
     if (contentLength > 8_192) {
