@@ -6,21 +6,28 @@ import { prisma } from "@/lib/prisma";
 import { buildDocumentPrompt, type DocumentAssistantInput } from "@/lib/ai/document-assistant";
 import { getAIProvider } from "@/lib/ai/provider";
 
+export const runtime = "nodejs";
+
+const REQUEST_LIMIT = 30_000;
+
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return originError();
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength > REQUEST_LIMIT) return NextResponse.json({ error: "Request is too large. Please shorten the document inputs." }, { status: 413 });
+
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let body: DocumentAssistantInput;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON." }, { status: 400 }); }
 
-  if (!body || typeof body !== "object") {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
     return NextResponse.json({ error: "A valid request body is required." }, { status: 400 });
   }
 
   const serialized = JSON.stringify(body);
-  if (serialized.length > 30000) {
-    return NextResponse.json({ error: "Request is too large. Please shorten the document inputs." }, { status: 400 });
+  if (serialized.length > REQUEST_LIMIT) {
+    return NextResponse.json({ error: "Request is too large. Please shorten the document inputs." }, { status: 413 });
   }
 
   try {
