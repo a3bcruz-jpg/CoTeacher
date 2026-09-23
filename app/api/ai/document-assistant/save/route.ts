@@ -13,8 +13,9 @@ export async function POST(request: Request) {
   const content = typeof body.content === "string" ? body.content.trim() : "";
   const generationId = typeof body.generationId === "string" ? body.generationId.trim() : "";
 
-  if (!title) return NextResponse.json({ error: "Document title is required." }, { status: 400 });
+  if (!title || title.length > 200) return NextResponse.json({ error: "Document title must be between 1 and 200 characters." }, { status: 400 });
   if (!content) return NextResponse.json({ error: "Document content is required." }, { status: 400 });
+  if (content.length > 100000) return NextResponse.json({ error: "Document content is too large." }, { status: 400 });
 
   try {
     const generation = generationId
