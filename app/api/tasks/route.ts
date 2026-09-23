@@ -89,6 +89,10 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Invalid due date." }, { status: 400 });
   }
 
+  if (typeof body.title === "string" && !body.title.trim()) {
+    return NextResponse.json({ error: "Task title cannot be empty." }, { status: 400 });
+  }
+
   const task = await prisma.task.update({
     where: { id },
     data: {
