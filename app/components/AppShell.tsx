@@ -5,7 +5,9 @@ const items = [
   { href: "/tasks", label: "Tasks", icon: "✓" },
   { href: "/documents", label: "Documents", icon: "▤" },
   { href: "/lesson-planner", label: "Lesson Planner", icon: "▱" },
-  { href: "/ai", label: "AI Assistant", icon: "✦" },\n  { href: "/assessment-generator", label: "Assessments", icon: "▦" },\n  { href: "/curriculum", label: "Curriculum", icon: "◎" },
+  { href: "/ai", label: "AI Assistant", icon: "✦" },
+  { href: "/assessment-generator", label: "Assessments", icon: "▦" },
+  { href: "/curriculum", label: "Curriculum", icon: "◎" },
   { href: "/onboarding", label: "Profile", icon: "♙" },
 ];
 
