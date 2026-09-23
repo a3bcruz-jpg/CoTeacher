@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       context: { teacherName: profile?.fullName ?? null, schoolName: profile?.school?.name ?? null },
       disclaimer: "AI assistance is a draft aid. Review all content and verify applicable official requirements before use or submission.",
     });
-  } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to generate draft." }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: "The AI provider could not generate the document draft." }, { status: 502 });
   }
 }
