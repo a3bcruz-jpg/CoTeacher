@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 const priorityRank = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 } as const;
 
 function startOfToday() { const now = new Date(); return new Date(now.getFullYear(), now.getMonth(), now.getDate()); }
+function getGreeting(now = new Date()) { const hour = now.getHours(); if (hour < 12) return "Good morning"; if (hour < 18) return "Good afternoon"; return "Good evening"; }
 function startOfTomorrow() { const today = startOfToday(); return new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); }
 function formatDueDate(value: Date | null) { if (!value) return "No deadline"; return value.toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
 
@@ -25,7 +26,7 @@ export default async function Home() {
   const profile = user.teacherProfile;
   const firstName = profile?.fullName?.split(" ")[0] || "Teacher";
   const greetingTitle = profile?.title === "MAAM" ? "Ma'am" : profile?.title === "SIR" ? "Sir" : "Teacher";
-  const greeting = greetingTitle === "Teacher" ? `Good morning, ${firstName}.` : `Good morning, ${greetingTitle} ${firstName}.`;
+  const greeting = greetingTitle === "Teacher" ? `${getGreeting()}, ${firstName}.` : `${getGreeting()}, ${greetingTitle} ${firstName}.`;
 
   return (
     <div className="app-shell">
