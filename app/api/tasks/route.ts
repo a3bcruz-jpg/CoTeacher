@@ -9,6 +9,8 @@ const priorities = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
 const statuses = ["TODO", "IN_PROGRESS", "COMPLETED"] as const;
 
 export async function GET() {
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength > 12000) return NextResponse.json({ error: "Request is too large." }, { status: 413 });
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
