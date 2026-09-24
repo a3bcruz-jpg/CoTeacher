@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { AppShell } from "@/app/components/AppShell";
 
 const priorityRank = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 } as const;
 
@@ -29,24 +30,8 @@ export default async function Home() {
   const greeting = greetingTitle === "Teacher" ? `${getGreeting()}, ${firstName}.` : `${getGreeting()}, ${greetingTitle} ${firstName}.`;
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <img className="brand-logo" src="/coteacher-logo.svg" alt="CoTeacher" />
-          <div><div className="brand-name">CoTeacher</div><div className="brand-subtitle">Teacher Admin Copilot</div><div className="brand-tagline">Less paperwork. More teaching.</div></div>
-        </div>
-        <nav className="nav" aria-label="Main navigation">
-          <a className="nav-item active" href="/" aria-current="page">⌂ <span>Dashboard</span></a>
-          <a className="nav-item" href="/tasks">✓ <span>Tasks</span></a>
-          <a className="nav-item" href="/documents">▤ <span>Documents</span></a>
-          <a className="nav-item" href="/lesson-planner">▱ <span>Lesson Planner</span></a>
-          <a className="nav-item" href="/ai">✦ <span>AI Assistant</span></a>
-          <a className="nav-item" href="/onboarding">♙ <span>Profile</span></a>
-        </nav>
-        <div className="sidebar-footer"><div className="sidebar-avatar">{firstName.charAt(0).toUpperCase()}</div><div><strong>{greetingTitle} {firstName}</strong><small>Teacher workspace</small></div></div>
-      </aside>
-
-      <main className="main" id="dashboard">
+    <AppShell active="/">
+    <main className="main" id="dashboard">
         <header className="header dashboard-header">
           <div><div className="eyebrow">Teacher workspace</div><h1>{greeting}</h1><p className="subtitle">Here’s what needs your attention today.</p></div>
           <form action="/api/auth/logout" method="post"><button className="secondary-button" type="submit">Sign out</button></form>
@@ -98,7 +83,7 @@ export default async function Home() {
             <div className="profile-summary"><div className="profile-avatar">{firstName.charAt(0).toUpperCase()}</div><div><strong>{greetingTitle} {profile?.fullName || "Teacher"}</strong><p>{profile?.position || "Teacher"}{profile?.school ? ` · ${profile.school.name}` : ""}</p><small>{profile?.gradeLevel || "Grade level not set"}{profile?.schoolYear ? ` · SY ${profile.schoolYear}` : ""}</small></div></div>
           </div>
         </section>
-      </main>
-    </div>
+    </main>
+  </AppShell>
   );
 }
