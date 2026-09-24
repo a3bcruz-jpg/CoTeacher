@@ -8,6 +8,10 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return originError();
   try {
+    const contentLength = Number(request.headers.get("content-length") || 0);
+    if (contentLength > 8_192) {
+      return NextResponse.json({ error: "Request is too large." }, { status: 413 });
+    }
     const body = await request.json();
     const email = String(body.email ?? "").trim().toLowerCase();
     const password = String(body.password ?? "");
