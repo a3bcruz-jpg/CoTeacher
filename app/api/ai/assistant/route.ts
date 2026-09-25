@@ -10,6 +10,8 @@ const LIMIT = 6000;
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return originError();
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength > 12000) return NextResponse.json({ error: "Request is too large." }, { status: 413 });
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
